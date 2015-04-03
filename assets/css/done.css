@@ -5,7 +5,73 @@
 }
 
 html {
-	/* set CSS rem size to 10px */
-	font: 62.5%/1.5 Helvetica, Arial, sans-serif;
+	font: 100%/1.5 Helvetica, Arial, sans-serif;
+	background-color: #ddd;
+}
 
+a {
+	color: #00a6ff;
+}
+
+a.button {
+	display: inline-block;
+	background-color: #00a6ff;
+	color: #fff;
+	text-decoration: none;
+	text-align: center;
+	padding: 0.2em 0.6em;
+	border-radius: 0.135em;
+}
+
+a.button:active {
+	background-color: #333;
+}
+
+#container {
+	width: 100%;
+	margin: 0 auto;
+	padding: 1em;
+	background-color: #fff;
+	box-shadow: 0 0.2em 0.4em rgba(0,0,0,0.3);
+}
+
+table {
+	width: 100%;
+	margin: 0.5em 0;
+}
+
+table th,
+table td {
+	border: 1px solid #ddd;
+	padding: 0.3em 0.4em;
+	vertical-align: middle;
+}
+
+table #header th { border: 0; }
+
+table th.edit { color: red; }
+table .today { color: #00a6ff; }
+
+table input {
+	-webkit-appearance: none;
+	background-color: #ddd;
+	width: 1em;
+	height: 1em;
+	border-radius: 0.135em;
+	-webkit-transition: all 0.75s ease;
+}
+
+table input:checked {
+	background-color: #00a6ff;
+}
+
+table input:focus {
+	outline: 0;
+	box-shadow: none;
+}
+
+@media screen and (min-width: 40em) {
+	#container {
+		width: 70%;
+	}
 }
