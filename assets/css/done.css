@@ -21,6 +21,7 @@ a.button {
 	text-align: center;
 	padding: 0.2em 0.6em;
 	border-radius: 0.135em;
+	margin-right: 0.5em;
 }
 
 a.button:active {
@@ -47,7 +48,8 @@ table td {
 	vertical-align: middle;
 }
 
-table #header th { border: 0; }
+table #header th { border: 0; width: 10%; }
+table #header th:first-child { width: 30%; }
 
 table th.edit { color: red; }
 table .today { color: #00a6ff; }
@@ -58,7 +60,6 @@ table input {
 	width: 1em;
 	height: 1em;
 	border-radius: 0.135em;
-	-webkit-transition: all 0.75s ease;
 }
 
 table input:checked {
