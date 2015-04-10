@@ -23,7 +23,7 @@ jQuery(document).ready(function($) {
 	console.log('init DB: '+oelna.done.dbsupport);
 
 	if(oelna.done.dbsupport) {
-		var version = 1;
+		var version = 4;
 		var open_request = indexedDB.open('done', version);
 
 		open_request.onupgradeneeded = function(e) {
@@ -32,11 +32,12 @@ jQuery(document).ready(function($) {
 			console.log('running onupgradeneeded');
 
 			if(!oelna.done.db.objectStoreNames.contains('tasks')) {
-				oelna.done.db.createObjectStore('tasks', {keyPath: 'id'});
+				oelna.done.db.createObjectStore('tasks', {autoIncrement: true});
 			}
 
 			if(!oelna.done.db.objectStoreNames.contains('times')) {
-				oelna.done.db.createObjectStore('times', {keyPath: 'id'});
+				var store = oelna.done.db.createObjectStore('times', {autoIncrement: true});
+				store.createIndex('datelink', ['id', 'date'], {unique: true});
 			}
 
 		}
@@ -46,13 +47,109 @@ jQuery(document).ready(function($) {
 		}
 
 		open_request.onsuccess = function(e) {
-			console.log('DB success');
-
 			oelna.done.db = e.target.result;
+			console.log('DB success: '+oelna.done.db);
 
+			get_tasks(function(data) {
+				//init the table view with days
+				init_table(oelna.done.show_days);
+
+				//loop over the single rows
+				for(i in data) {
+					add_row(data[i].title, i);
+				}
+			});
 
 		};
+
+		//indexedDB.deleteDatabase("done")
 	}
+
+	function get_tasks(callback) {
+		var transaction = oelna.done.db.transaction(['tasks'], 'readonly');
+		var store = transaction.objectStore('tasks');
+
+		var range = IDBKeyRange.lowerBound(0); //get everything in the store
+		var request = store.openCursor(range);
+
+		var data = [];
+		request.onsuccess = function(e) {
+			var result = e.target.result;
+
+			if(result) {
+				data.push(result.value);
+				result.continue();
+
+			} else {
+				callback(data);
+			}
+		};
+	};
+
+	function add_task(title) {
+
+		var transaction = oelna.done.db.transaction(['tasks'], 'readwrite');
+		var store = transaction2.objectStore('tasks');
+
+		var index = {
+			title: title
+		}
+
+		var request = store2.add(index);
+
+		request.onerror = function(e) {
+			console.log("Error",e.target.error.name);
+			//some type of error handler
+		}
+
+		request.onsuccess = function(e) {
+			//added successfully
+		}
+	};
+
+	function add_link(date, row) {
+
+		var transaction = oelna.done.db.transaction(['times'], 'readwrite');
+		var store = transaction.objectStore('times');
+
+		var index = {
+			id: row,
+			date: date
+		}
+
+		var request = store.add(index);
+
+		request.onerror = function(e) {
+			console.log("Error",e.target.error.name);
+			//some type of error handler
+		}
+
+		request.onsuccess = function(e) {
+			//added successfully
+		}
+	};
+
+	function remove_link(date, row) {
+
+		var transaction = oelna.done.db.transaction(['times'], 'readwrite');
+		var store = transaction.objectStore('times');
+
+		var index = {
+			id: row,
+			date: date
+		}
+
+		var request = store.add(index);
+
+		request.onerror = function(e) {
+			console.log("Error",e.target.error.name);
+			//some type of error handler
+		}
+
+		request.onsuccess = function(e) {
+			//added successfully
+		}
+	};
 
 	function init_table(amount, startdate) {
 		if(!amount || amount < 1) var amount = 7;
@@ -91,13 +188,13 @@ jQuery(document).ready(function($) {
 		oelna.done.main_table.empty();
 	};
 
-	function add_row(title) {
+	function add_row(title, id) {
 		if(!title) return;
 
 		var first_row = oelna.done.main_table.find('tr:eq(0)');
 		var length = first_row.find('th, td').length;
 
-		var row = $('<tr>').attr('data-itemid', 0).append('<th>'+title+'</th>');
+		var row = $('<tr>').attr('data-itemid', id).append('<th>'+title+'</th>');
 
 		for(var i=0; i<length-1; i++) {
 			var index = first_row.find('th').eq(i+1);
@@ -107,38 +204,57 @@ jQuery(document).ready(function($) {
 			//todo: fill in data from DB
 		}
 
+		//add_task(title);
+
 		oelna.done.main_table.append(row);
-	}
+	};
 
 	function edit_mode_on() {
 		var first_column = oelna.done.main_table.find('tr:gt(0)').find('th:eq(0)');
 
 		oelna.done.editmode = 1;
 		first_column.addClass('edit');
-	}
+	};
 
 	function edit_mode_off() {
 		var first_column = oelna.done.main_table.find('tr:gt(0)').find('th:eq(0)');
 
 		oelna.done.editmode = 0;
 		first_column.removeClass('edit');
-	}
+	};
 
 	function parse_date(input) {
-		console.log(input);
 		var parts = input.split('-');
 
 		return new Date(parts[0], parts[1]-1, parts[2]);
-	}
+	};
+
+	function date_to_string(input) {
+		return input.getFullYear()+'-'+(input.getMonth()+1)+'-'+input.getDay();
+	};
 
 	function echo_date(input) {
 		console.log(input.getDate()+'.'+input.getMonth()+'.'+input.getFullYear());
-	}
+	};
 
 	$(document).on('click', 'table input', function(e) {
-		console.log('clicked row #');
 
-		//todo: add link to DB
+		var row_id = $(this).parents('tr').eq(0).data('itemid');
+		console.log(row_id);
+
+		var date = $(this).data('date');
+		console.log('clicked date '+date);
+
+
+		//weird counterintuitive javascript behavior
+		if($(this).is(':checked')) {
+			//check the checkbox and add to DB
+			add_link(date, row_id);
+		} else {
+			//uncheck and remove from the DB
+			remove_link(date, row_id);
+		}
+
 	});
 
 	$(document).on('click', '#add', function(e) {
@@ -146,7 +262,7 @@ jQuery(document).ready(function($) {
 		if(oelna.done.editmode) edit_mode_off(); //disable edit mode first
 
 		var title = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 8);
-		add_row(title);
+		add_row(title, 4);
 
 		//todo: add to DB
 	});
@@ -185,20 +301,27 @@ jQuery(document).ready(function($) {
 			var last_day = parse_date(first_row.find('th:eq('+(first_row.find('th').length-1)+')').data('date'));
 
 			var start = last_day;
+			start.setDate(start.getDate() + 1);
 		}
 
-		clear_table();
-		init_table(oelna.done.show_days, start);
-		add_row('test 1');
-		add_row('test 2');
-		add_row('test 3');
+		//get the data from the DB
+		get_tasks(function(data) {
+			clear_table();
+
+			//init the table view with days
+			init_table(oelna.done.show_days, start);
+
+			//loop over the single rows
+			for(i in data) {
+				add_row(data[i].title, i);
+			}
+		});
 	});
 
 
-	init_table(oelna.done.show_days);
-	add_row('test 1');
-	add_row('test 2');
-	add_row('test 3');
+
+
+
 });
 
-//oelna.done.db.deleteDatabase('done');
+//indexedDB.deleteDatabase("done")
